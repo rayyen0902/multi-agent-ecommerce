@@ -75,6 +75,17 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-web-frontend:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-web-frontend:${{ github.sha }}
 
+      # ── Mirror Docker Hub images to GHCR (server has no Docker Hub access) ──
+      - name: Mirror Postgres & Redis to GHCR
+        run: |
+          docker pull postgres:16-alpine
+          docker tag postgres:16-alpine ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-postgres:16-alpine
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-postgres:16-alpine
+
+          docker pull redis:7-alpine
+          docker tag redis:7-alpine ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-redis:7-alpine
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-redis:7-alpine
+
       # ── Deploy ──
       - name: Setup SSH
         env:
@@ -104,10 +115,6 @@ jobs:
             ${DEPLOY_USER}@${DEPLOY_HOST} \
             "cd /opt/ecom && \
              echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin && \
-             # 先预拉取 Docker Hub 基础镜像（带重试），避免后面 docker compose pull 超时
-             for img in postgres:16-alpine redis:7-alpine; do \
-               docker pull \$img || (echo 'Retry pulling \$img...' && sleep 10 && docker pull \$img); \
-             done && \
              docker compose --env-file .env.ecom -f docker-compose.ecom.yml pull && \
              docker compose --env-file .env.ecom -f docker-compose.ecom.yml up -d --no-build && \
              sleep 5 && \
