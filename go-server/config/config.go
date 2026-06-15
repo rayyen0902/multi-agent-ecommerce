@@ -78,7 +78,7 @@ func Load() *Config {
 			User:     getEnv("DB_USER", "ecom"),
 			Password: getEnv("DB_PASSWORD", ""),
 			DBName:   getEnv("DB_NAME", "ecom_order_hub"),
-			SSLMode:  getEnv("DB_SSLMODE", "require"),
+			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),
