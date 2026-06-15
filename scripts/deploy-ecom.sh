@@ -23,8 +23,9 @@ sleep 10
 echo "=== 检查容器状态 ==="
 docker compose -f docker-compose.ecom.yml ps
 
-echo "=== 重新加载 Nginx ==="
-nginx -t && nginx -s reload
+echo "=== 部署 Nginx 配置并重载 ==="
+cp -f /opt/ecom/nginx/ecom.conf /etc/nginx/conf.d/ecom.conf
+nginx -t && nginx -s reload && echo "[OK] Nginx 重载完成"
 
 echo "=== 部署完成 ==="
 echo "访问地址: https://knownot.cc/ecom/"
