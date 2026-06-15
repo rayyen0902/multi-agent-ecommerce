@@ -11,7 +11,8 @@ if [ -f /etc/docker/daemon.json ]; then
 fi
 
 # 2. 写入加速器配置（同时包含 ghcr.io 和 Docker Hub 的加速器）
-cat > /etc/docker/daemon.json << 'EOF'
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF' > /dev/null
 {
   "registry-mirrors": [
     "https://3odwuynp.mirror.aliyuncs.com"
