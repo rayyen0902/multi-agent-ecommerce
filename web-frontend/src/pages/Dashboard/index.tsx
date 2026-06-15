@@ -27,8 +27,8 @@ export default function Dashboard() {
           dashboardApi.overview(),
           dashboardApi.salesTrend(),
         ])
-        setOverview(ovRes.data)
-        setTrend(trRes.data || [])
+        setOverview(ovRes)
+        setTrend(trRes || [])
       } catch (e) {
         console.error('Failed to fetch dashboard data:', e)
         message.error('数据看板加载失败，请稍后重试')
