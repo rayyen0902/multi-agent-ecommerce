@@ -49,17 +49,17 @@ request.interceptors.response.use(
 
 // 封装类型正确的请求方法
 const http = {
-  get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return request.get(url, config).then(r => r.data as ApiResponse<T>)
+  get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return request.get(url, config).then((r: any) => r.data as T)
   },
-  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return request.post(url, data, config).then(r => r.data as ApiResponse<T>)
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    return request.post(url, data, config).then((r: any) => r.data as T)
   },
-  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return request.put(url, data, config).then(r => r.data as ApiResponse<T>)
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
+    return request.put(url, data, config).then((r: any) => r.data as T)
   },
-  delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
-    return request.delete(url, config).then(r => r.data as ApiResponse<T>)
+  delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    return request.delete(url, config).then((r: any) => r.data as T)
   },
 }
 
