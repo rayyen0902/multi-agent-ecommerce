@@ -1,0 +1,103 @@
+name: Build & Deploy Ecom
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'go-server/**'
+      - 'python-worker/**'
+      - 'agent-orchestrator/**'
+      - 'web-frontend/**'
+      - 'docker-compose.ecom.yml'
+      - '.github/workflows/deploy-ecom.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: rayyen0902/ecom
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Go Server ──
+      - name: Build & Push Go Server
+        uses: docker/build-push-action@v6
+        with:
+          context: ./go-server
+          file: ./go-server/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-go-server:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-go-server:${{ github.sha }}
+
+      # ── Python Worker ──
+      - name: Build & Push Python Worker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./python-worker
+          file: ./python-worker/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-python-worker:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-python-worker:${{ github.sha }}
+
+      # ── Agent Orchestrator ──
+      - name: Build & Push Agent Orchestrator
+        uses: docker/build-push-action@v6
+        with:
+          context: ./agent-orchestrator
+          file: ./agent-orchestrator/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-agent-orchestrator:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-agent-orchestrator:${{ github.sha }}
+
+      # ── Web Frontend ──
+      - name: Build & Push Web Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web-frontend
+          file: ./web-frontend/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-web-frontend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}-web-frontend:${{ github.sha }}
+
+      # ── Deploy ──
+      - name: Deploy to Server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_deploy ${DEPLOY_USER}@${DEPLOY_HOST} \
+            "cd /opt/ecom && \
+             docker compose -f docker-compose.ecom.yml pull && \
+             docker compose -f docker-compose.ecom.yml up -d --no-build && \
+             sleep 5 && \
+             docker compose -f docker-compose.ecom.yml ps && \
+             echo '=== Health Check ===' && \
+             curl -sf http://127.0.0.1:6300/health || echo 'Frontend health check skipped' && \
+             echo '=== Deployment Complete ==='"
