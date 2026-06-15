@@ -26,11 +26,17 @@ class BlackboardService:
     ):
         self.redis = redis_store
         self.pg = pg_store
+        # 跟踪所有后台持久化任务，确保 shutdown 时全部完成
+        self._background_tasks: set[asyncio.Task] = set()
 
     async def initialize(self) -> None:
         await self.redis.connect()
 
     async def shutdown(self) -> None:
+        # 等待所有后台 PG 持久化任务完成后再断开 Redis
+        if self._background_tasks:
+            logger.info(f"等待 {len(self._background_tasks)} 个后台持久化任务完成...")
+            await asyncio.gather(*self._background_tasks, return_exceptions=True)
         await self.redis.disconnect()
 
     # ---------- 写入 ----------
@@ -38,8 +44,9 @@ class BlackboardService:
     async def write(self, entry: BlackboardEntry) -> None:
         """写入黑板条目：Redis 即时 + PG 后台持久化"""
         await self.redis.write_entry(entry)
-        # PG 持久化不阻塞主流程
-        asyncio.create_task(self._persist_entry(entry))
+        task = asyncio.create_task(self._persist_entry(entry))
+        task.add_done_callback(self._background_tasks.discard)
+        self._background_tasks.add(task)
 
     async def _persist_entry(self, entry: BlackboardEntry) -> None:
         try:
@@ -91,7 +98,9 @@ class BlackboardService:
     # ---------- 执行日志 ----------
 
     async def save_execution_log(self, log: AgentExecutionLog) -> None:
-        asyncio.create_task(self._persist_log(log))
+        task = asyncio.create_task(self._persist_log(log))
+        task.add_done_callback(self._background_tasks.discard)
+        self._background_tasks.add(task)
 
     async def _persist_log(self, log: AgentExecutionLog) -> None:
         try:

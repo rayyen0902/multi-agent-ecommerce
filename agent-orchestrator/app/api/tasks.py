@@ -61,6 +61,15 @@ async def get_session_detail(
     user_id: int = Depends(_get_user_id),
 ):
     """获取指定会话的黑板条目（完整对话记录）"""
+    # IDOR 修复: 通过数据库级查询验证当前用户拥有该会话，
+    # 避免内存中 limit=1000 可被绕过的风险
+    user_sessions = await _blackboard.get_session_history(
+        user_id=user_id, limit=1, offset=0
+    )
+    owned_ids = {s["session_id"] for s in user_sessions}
+    if session_id not in owned_ids:
+        raise HTTPException(status_code=403, detail="无权访问此会话")
+
     entries = await _blackboard.get_session_entries(session_id)
     return {
         "code": 0,

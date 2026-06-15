@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
@@ -48,6 +49,24 @@ func (c *DatabaseConfig) DSN() string {
 		c.Host, c.User, c.Password, c.DBName, c.Port, c.SSLMode)
 }
 
+// Validate 验证必需的敏感配置是否已设置
+func (c *Config) Validate() error {
+	var errList []string
+	if c.Database.Password == "" {
+		errList = append(errList, "DB_PASSWORD")
+	}
+	if c.Redis.Password == "" {
+		errList = append(errList, "REDIS_PASSWORD")
+	}
+	if c.JWT.Secret == "" {
+		errList = append(errList, "JWT_SECRET")
+	}
+	if len(errList) > 0 {
+		return fmt.Errorf("缺少必需的环境变量: %s。请通过环境变量设置。", strings.Join(errList, ", "))
+	}
+	return nil
+}
+
 func Load() *Config {
 	return &Config{
 		Server: ServerConfig{
@@ -57,18 +76,18 @@ func Load() *Config {
 			Host:     getEnv("DB_HOST", "localhost"),
 			Port:     getEnvInt("DB_PORT", 5432),
 			User:     getEnv("DB_USER", "ecom"),
-			Password: getEnv("DB_PASSWORD", "ecom_secret_123"),
+			Password: getEnv("DB_PASSWORD", ""),
 			DBName:   getEnv("DB_NAME", "ecom_order_hub"),
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+			SSLMode:  getEnv("DB_SSLMODE", "require"),
 		},
 		Redis: RedisConfig{
 			Host:     getEnv("REDIS_HOST", "localhost"),
 			Port:     getEnvInt("REDIS_PORT", 6379),
-			Password: getEnv("REDIS_PASSWORD", "redis_secret_123"),
+			Password: getEnv("REDIS_PASSWORD", ""),
 			DB:       getEnvInt("REDIS_DB", 0),
 		},
 		JWT: JWTConfig{
-			Secret:     getEnv("JWT_SECRET", "default_jwt_secret_change_me"),
+			Secret:     getEnv("JWT_SECRET", ""),
 			ExpireHour: getEnvInt("JWT_EXPIRE_HOUR", 24),
 		},
 		Python: PythonConfig{

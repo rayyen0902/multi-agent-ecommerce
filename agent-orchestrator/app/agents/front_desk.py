@@ -1,6 +1,7 @@
 """前台 Agent - 意图识别与路由（不执行任何业务操作）"""
 import json
 import logging
+import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -15,6 +16,19 @@ class FrontDeskAgent:
 
     def __init__(self, model_router: ModelRouter):
         self.model = model_router.get_model("front_desk")
+
+    @staticmethod
+    def _extract_json(content: str) -> str:
+        """从 LLM 响应中提取 JSON，处理 markdown 代码块包裹的多种情况"""
+        content = content.strip()
+
+        # 匹配 ```json ... ``` 或 ``` ... ``` 包裹的 JSON
+        match = re.search(r'```(?:json)?\s*\n(.*?)```', content, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+
+        # 未找到代码块，直接返回原始内容
+        return content
 
     async def analyze_intent(self, user_input: str) -> dict:
         """分析用户意图，返回结构化结果
@@ -35,17 +49,9 @@ class FrontDeskAgent:
         ]
 
         response = await self.model.ainvoke(messages)
-        content = response.content.strip()
+        content = self._extract_json(response.content)
 
-        # 尝试解析 JSON
         try:
-            # 处理可能的 markdown 代码块包裹
-            if content.startswith("```"):
-                content = content.split("```")[1]
-                if content.startswith("json"):
-                    content = content[4:]
-                content = content.strip()
-
             result = json.loads(content)
         except json.JSONDecodeError:
             logger.warning(f"Front-desk Agent 输出非 JSON: {content[:200]}")

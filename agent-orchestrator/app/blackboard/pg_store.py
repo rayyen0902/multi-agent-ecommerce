@@ -1,4 +1,5 @@
 """PostgreSQL 黑板持久化存储 - 审计与回放"""
+import json
 from typing import Optional
 
 from sqlalchemy import text
@@ -35,7 +36,7 @@ class PgBlackboardStore:
                     "user_id": session.user_id,
                     "title": session.title,
                     "status": session.status,
-                    "metadata": "{}",
+                    "metadata": json.dumps(session.metadata) if session.metadata else "{}",
                     "created_at": session.created_at,
                     "updated_at": session.updated_at,
                 },
@@ -79,7 +80,7 @@ class PgBlackboardStore:
                     "author_agent": entry.author_agent,
                     "version": entry.version,
                     "parent_version": entry.parent_version,
-                    "metadata": "{}",
+                    "metadata": json.dumps(entry.metadata) if entry.metadata else "{}",
                     "created_at": entry.created_at,
                     "expires_at": entry.expires_at,
                 },
@@ -105,8 +106,8 @@ class PgBlackboardStore:
                     "session_id": log.session_id,
                     "agent_name": log.agent_name,
                     "action": log.action,
-                    "input_data": "{}",
-                    "output_data": "{}",
+                    "input_data": json.dumps(log.input_data) if log.input_data is not None else "{}",
+                    "output_data": json.dumps(log.output_data) if log.output_data is not None else "{}",
                     "model_used": log.model_used,
                     "tokens_input": log.tokens_input,
                     "tokens_output": log.tokens_output,
@@ -159,7 +160,7 @@ class PgBlackboardStore:
                         "plan_id": plan.plan_id,
                         "agent_name": subtask.agent_name,
                         "description": subtask.description,
-                        "dependencies": "[]",
+                        "dependencies": json.dumps(subtask.dependencies),
                         "status": subtask.status.value if hasattr(subtask.status, "value") else subtask.status,
                         "revision_count": subtask.revision_count,
                         "max_revisions": subtask.max_revisions,

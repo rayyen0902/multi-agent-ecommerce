@@ -47,6 +47,9 @@ async def chat_websocket(
 ):
     """对话 WebSocket 端点
 
+    注意: FastAPI WebSocket 不支持自定义 header，因此 token 通过 query param 传递。
+    这可能导致 token 出现在服务器日志中，短期可接受。后续可迁移到 auth handshake 模式。
+
     协议:
     - 客户端发送: {"type": "user_message", "session_id": "...", "content": "..."}
     - 服务端推送:
@@ -54,11 +57,10 @@ async def chat_websocket(
       - {"type": "task_progress", "session_id": "...", "content": "...", "metadata": {...}}
       - {"type": "error", "session_id": "...", "content": "错误信息"}
     """
-    await websocket.accept()
-
-    # 验证 token
+    # 先验证 token，成功后才 accept 连接
     payload = _verify_token(token)
     if not payload:
+        await websocket.accept()
         await websocket.send_json({
             "type": "error",
             "session_id": "",
@@ -66,6 +68,8 @@ async def chat_websocket(
         })
         await websocket.close(code=4001)
         return
+
+    await websocket.accept()
 
     user_id = payload.get("user_id", 0)
     logger.info(f"WebSocket 连接: user_id={user_id}")
@@ -120,18 +124,19 @@ async def chat_websocket(
                     },
                 })
 
-            except Exception as e:
-                logger.exception(f"工作流执行失败: {e}")
+            except Exception:
+                logger.exception(f"工作流执行失败: session_id={session_id}")
+                # 脱敏：不向客户端暴露内部错误信息
                 await websocket.send_json({
                     "type": "error",
                     "session_id": session_id,
-                    "content": f"处理过程中出现错误: {str(e)}",
+                    "content": "处理过程中出现错误，请稍后重试",
                 })
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket 断开: user_id={user_id}")
-    except Exception as e:
-        logger.exception(f"WebSocket 异常: {e}")
+    except Exception:
+        logger.exception(f"WebSocket 异常: user_id={user_id}")
         try:
             await websocket.close(code=1011)
         except Exception:

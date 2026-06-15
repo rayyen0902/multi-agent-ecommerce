@@ -84,7 +84,7 @@ func (h *OrderHandler) UpdateRemark(c *gin.Context) {
 	}
 
 	if err := h.orderSvc.UpdateRemark(id, req.SellerRemark); err != nil {
-		pkg.Fail(c, pkg.ErrCodeServerInternal, err.Error())
+		pkg.Fail(c, pkg.ErrCodeServerInternal, "更新备注失败")
 		return
 	}
 	pkg.Success(c, nil)
@@ -104,7 +104,7 @@ func (h *OrderHandler) UpdateTags(c *gin.Context) {
 	}
 
 	if err := h.orderSvc.UpdateTags(id, req.Tags); err != nil {
-		pkg.Fail(c, pkg.ErrCodeServerInternal, err.Error())
+		pkg.Fail(c, pkg.ErrCodeServerInternal, "更新标签失败")
 		return
 	}
 	pkg.Success(c, nil)
@@ -124,7 +124,7 @@ func (h *OrderHandler) Ship(c *gin.Context) {
 	}
 
 	if err := h.orderSvc.ShipOrder(id, req.ShippingCompany, req.TrackingNo); err != nil {
-		pkg.Fail(c, pkg.ErrCodeOrderStatusErr, err.Error())
+		pkg.Fail(c, pkg.ErrCodeOrderStatusErr, "发货失败")
 		return
 	}
 	pkg.Success(c, nil)
@@ -139,7 +139,7 @@ func (h *OrderHandler) BatchShip(c *gin.Context) {
 
 	errs, err := h.orderSvc.BatchShip(req.Items)
 	if err != nil {
-		pkg.Fail(c, pkg.ErrCodeServerInternal, err.Error())
+		pkg.Fail(c, pkg.ErrCodeServerInternal, "批量发货失败")
 		return
 	}
 

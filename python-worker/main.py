@@ -40,6 +40,10 @@ class SyncRequest(BaseModel):
     app_secret: str
     access_token: str
     sync_type: str = "orders"  # orders / logistics
+    # logistics 同步所需的字段
+    order_id: Optional[int] = None
+    tracking_no: Optional[str] = None
+    company_code: Optional[str] = None
 
 
 class SyncResponse(BaseModel):
@@ -65,10 +69,11 @@ async def trigger_sync(req: SyncRequest):
         )
         return SyncResponse(task_id=str(result.id), status="queued")
     elif req.sync_type == "logistics":
+        # 修复: 使用正确的参数映射
         result = sync_order_logistics.delay(
-            order_id=req.shop_id,  # 这里简化，实际应传 order_id
-            tracking_no="",
-            company_code="",
+            order_id=req.order_id,
+            tracking_no=req.tracking_no or "",
+            company_code=req.company_code or "",
         )
         return SyncResponse(task_id=str(result.id), status="queued")
 

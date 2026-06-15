@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -17,6 +18,11 @@ func main() {
 	// 加载配置
 	cfg := config.Load()
 
+	// 验证必需的敏感配置
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("配置错误: %v", err)
+	}
+
 	// 连接数据库
 	db, err := gorm.Open(postgres.Open(cfg.Database.DSN()), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
@@ -25,18 +31,20 @@ func main() {
 		log.Fatalf("数据库连接失败: %v", err)
 	}
 
-	// 自动迁移（开发环境使用，生产环境应使用 migration 脚本）
-	if err := db.AutoMigrate(
-		&model.User{},
-		&model.Shop{},
-		&model.Product{},
-		&model.Order{},
-		&model.OrderItem{},
-		&model.Logistics{},
-		&model.Rule{},
-		&model.AutomationLog{},
-	); err != nil {
-		log.Fatalf("数据库迁移失败: %v", err)
+	// 自动迁移（仅在 AUTO_MIGRATE=true 时执行，生产环境应使用 migration 脚本）
+	if os.Getenv("AUTO_MIGRATE") == "true" {
+		if err := db.AutoMigrate(
+			&model.User{},
+			&model.Shop{},
+			&model.Product{},
+			&model.Order{},
+			&model.OrderItem{},
+			&model.Logistics{},
+			&model.Rule{},
+			&model.AutomationLog{},
+		); err != nil {
+			log.Fatalf("数据库迁移失败: %v", err)
+		}
 	}
 
 	// 设置路由

@@ -3,7 +3,7 @@ import { message } from 'antd'
 import { useAuthStore } from '../stores/useAuthStore'
 
 const request = axios.create({
-  baseURL: '/api/v1',
+  baseURL: '/ecom/api/v1',
   timeout: 30000,
 })
 
@@ -19,6 +19,9 @@ request.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+// 获取 SPA 应用的基础路径（Vite base 配置）
+const appBase = import.meta.env.BASE_URL.replace(/\/$/, '') || ''
+
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
@@ -27,7 +30,7 @@ request.interceptors.response.use(
       message.error(data.message || '请求失败')
       if (data.code === 10002 || data.code === 10003) {
         useAuthStore.getState().logout()
-        window.location.href = '/login'
+        window.location.href = `${appBase}/login`
       }
       return Promise.reject(new Error(data.message))
     }
@@ -36,7 +39,7 @@ request.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().logout()
-      window.location.href = '/login'
+      window.location.href = `${appBase}/login`
     }
     message.error(error.message || '网络错误')
     return Promise.reject(error)

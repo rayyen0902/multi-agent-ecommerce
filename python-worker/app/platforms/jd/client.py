@@ -29,7 +29,8 @@ class JDAdapter(PlatformAdapter):
 
     async def handle_callback(self, code: str) -> TokenResult:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{self.AUTH_URL}/oauth/token", params={
+            # 使用 POST body 传输凭证，避免 app_secret 出现在 URL 日志中
+            resp = await client.post(f"{self.AUTH_URL}/oauth/token", json={
                 "app_key": self.app_key,
                 "app_secret": self.app_secret,
                 "grant_type": "authorization_code",
@@ -46,7 +47,8 @@ class JDAdapter(PlatformAdapter):
 
     async def refresh_access_token(self) -> TokenResult:
         async with httpx.AsyncClient() as client:
-            resp = await client.get(f"{self.AUTH_URL}/oauth/token", params={
+            # 使用 POST body 传输凭证，避免 app_secret 出现在 URL 日志中
+            resp = await client.post(f"{self.AUTH_URL}/oauth/token", json={
                 "app_key": self.app_key,
                 "app_secret": self.app_secret,
                 "grant_type": "refresh_token",

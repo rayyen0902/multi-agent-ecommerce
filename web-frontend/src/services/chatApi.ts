@@ -28,7 +28,7 @@ export class ChatWebSocket {
     this.onMessage = handler
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${protocol}//${window.location.host}/api/agent/ws?token=${encodeURIComponent(token)}`
+    const url = `${protocol}//${window.location.host}/ecom/api/agent/ws?token=${encodeURIComponent(token)}`
 
     this.ws = new WebSocket(url)
 

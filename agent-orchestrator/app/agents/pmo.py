@@ -1,6 +1,8 @@
 """PMO Agent - 项目管理办公室（任务分解、分发、验收）"""
+import asyncio
 import json
 import logging
+import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -208,68 +210,113 @@ class PMOAgent:
 
         return review
 
+    async def _execute_and_review(
+        self,
+        session_id: str,
+        subtask: SubTask,
+        intent: dict,
+        context: dict = None,
+    ) -> tuple[str, SubTaskStatus, str]:
+        """执行单个子任务并验收，返回 (result_text, status, error_reason)"""
+        result_text = await self.execute_subtask(session_id, subtask, context=context)
+
+        for attempt in range(MAX_REVISIONS + 1):
+            review = await self.review_result(
+                session_id, subtask, result_text, intent
+            )
+
+            if review.approved or review.score >= REVIEW_PASS_SCORE:
+                subtask.status = SubTaskStatus.COMPLETED
+                subtask.result = result_text
+                return result_text, SubTaskStatus.COMPLETED, ""
+
+            if attempt < MAX_REVISIONS:
+                subtask.status = SubTaskStatus.REVISION
+                subtask.revision_count += 1
+
+                await self.blackboard.write(BlackboardEntry(
+                    session_id=session_id,
+                    entry_type=EntryType.REVISION_GUIDANCE,
+                    key=subtask.task_id,
+                    value={
+                        "attempt": attempt + 1,
+                        "issues": review.issues,
+                        "guidance": review.revision_guidance,
+                    },
+                    author_agent="pmo",
+                ))
+
+                result_text = await self.execute_subtask(
+                    session_id,
+                    subtask,
+                    context={"revision_guidance": review.revision_guidance},
+                )
+            else:
+                subtask.status = SubTaskStatus.FAILED
+                return (
+                    f"[任务未达标] {subtask.description}\n"
+                    f"原因: {'; '.join(review.issues)}\n"
+                    f"结果: {result_text}",
+                    SubTaskStatus.FAILED,
+                    "; ".join(review.issues),
+                )
+
+        return result_text, SubTaskStatus.FAILED, "验收循环异常退出"
+
     async def orchestrate(
         self, session_id: str, intent: dict
     ) -> str:
-        """完整编排流程：分解 -> 执行 -> 验收 -> 汇总"""
+        """完整编排流程：分解 -> 执行(并行) -> 验收 -> 汇总"""
         # 1. 分解任务
         task_plan = await self.decompose_task(session_id, intent)
         task_plan.status = "executing"
 
-        results = []
-        for subtask in task_plan.subtasks:
-            # 2. 执行
-            result_text = await self.execute_subtask(
-                session_id, subtask
-            )
+        # 2. 按依赖关系拓扑排序分组执行
+        pending = {st.task_id: st for st in task_plan.subtasks}
+        completed_results: dict[str, str] = {}  # task_id -> result_text
+        results_by_order: list[tuple[str, str, SubTaskStatus]] = []
 
-            # 3. 验收循环
-            for attempt in range(MAX_REVISIONS + 1):
-                review = await self.review_result(
-                    session_id, subtask, result_text, intent
-                )
+        while pending:
+            # 找出所有依赖已满足的子任务
+            ready = []
+            for task_id, subtask in list(pending.items()):
+                deps = subtask.dependencies
+                if all(d in completed_results for d in deps):
+                    ready.append((task_id, subtask))
 
-                if review.approved or review.score >= REVIEW_PASS_SCORE:
-                    subtask.status = SubTaskStatus.COMPLETED
-                    subtask.result = result_text
-                    results.append(result_text)
-                    break
+            if not ready:
+                # Circular dependency — 标记剩余为失败
+                for task_id, subtask in pending.items():
+                    subtask.status = SubTaskStatus.FAILED
+                    results_by_order.append(
+                        (task_id, f"[任务失败] 依赖解析错误", SubTaskStatus.FAILED)
+                    )
+                break
 
-                if attempt < MAX_REVISIONS:
-                    # 打回重做
-                    subtask.status = SubTaskStatus.REVISION
-                    subtask.revision_count += 1
+            # 并行执行所有就绪的子任务
+            coros = [
+                self._execute_and_review(session_id, subtask, intent)
+                for _, subtask in ready
+            ]
+            batch_results = await asyncio.gather(*coros, return_exceptions=True)
 
-                    # 写入修改建议
-                    await self.blackboard.write(BlackboardEntry(
-                        session_id=session_id,
-                        entry_type=EntryType.REVISION_GUIDANCE,
-                        key=subtask.task_id,
-                        value={
-                            "attempt": attempt + 1,
-                            "issues": review.issues,
-                            "guidance": review.revision_guidance,
-                        },
-                        author_agent="pmo",
-                    ))
-
-                    # 带修改建议重新执行
-                    result_text = await self.execute_subtask(
-                        session_id,
-                        subtask,
-                        context={"revision_guidance": review.revision_guidance},
+            for ((task_id, subtask), result) in zip(ready, batch_results):
+                if isinstance(result, Exception):
+                    subtask.status = SubTaskStatus.FAILED
+                    results_by_order.append(
+                        (task_id, f"[任务失败] {result}", SubTaskStatus.FAILED)
                     )
                 else:
-                    # 超过重试上限
-                    subtask.status = SubTaskStatus.FAILED
-                    results.append(
-                        f"[任务未达标] {subtask.description}\n"
-                        f"原因: {'; '.join(review.issues)}\n"
-                        f"结果: {result_text}"
-                    )
+                    result_text, status, _ = result
+                    results_by_order.append((task_id, result_text, status))
+                    completed_results[task_id] = result_text
 
-        # 4. 汇总最终响应
-        final_response = self._synthesize_response(task_plan, results)
+            # 从 pending 中移除已完成的
+            for task_id, _ in ready:
+                del pending[task_id]
+
+        # 3. 汇总最终响应
+        final_response = self._synthesize_response_v2(task_plan, results_by_order)
 
         await self.blackboard.write(BlackboardEntry(
             session_id=session_id,
@@ -287,18 +334,24 @@ class PMOAgent:
         return final_response
 
     @staticmethod
-    def _synthesize_response(task_plan: TaskPlan, results: list[str]) -> str:
-        """将多个子任务结果整合为最终回复"""
-        if len(results) == 1:
-            return results[0]
+    def _synthesize_response_v2(
+        task_plan: TaskPlan,
+        results: list[tuple[str, str, SubTaskStatus]],
+    ) -> str:
+        """将并行执行的子任务结果整合为最终回复"""
+        if not results:
+            return "没有可执行的子任务。"
 
         sections = []
-        for i, (subtask, result) in enumerate(
-            zip(task_plan.subtasks, results), 1
-        ):
-            status_icon = "✅" if subtask.status == SubTaskStatus.COMPLETED else "⚠️"
+        for i, (task_id, result_text, status) in enumerate(results, 1):
+            # 查找对应的 subtask 获取描述
+            subtask = next(
+                (st for st in task_plan.subtasks if st.task_id == task_id), None
+            )
+            desc = subtask.description if subtask else task_id
+            status_icon = "✅" if status == SubTaskStatus.COMPLETED else "⚠️"
             sections.append(
-                f"### {status_icon} 任务 {i}: {subtask.description}\n\n{result}"
+                f"### {status_icon} 任务 {i}: {desc}\n\n{result_text}"
             )
 
         return "\n\n---\n\n".join(sections)
@@ -306,13 +359,22 @@ class PMOAgent:
     @staticmethod
     def _parse_json(content: str) -> dict:
         """解析 JSON，处理 markdown 代码块包裹"""
+        import re
+
         content = content.strip()
-        if content.startswith("```"):
+
+        # 匹配 ```json ... ``` 或 ``` ... ``` 包裹的 JSON
+        match = re.search(r'```(?:json)?\s*\n(.*?)```', content, re.DOTALL)
+        if match:
+            content = match.group(1).strip()
+        elif content.startswith("```"):
+            # 回退：旧逻辑处理单行 ``` 情况
             parts = content.split("```")
             content = parts[1] if len(parts) > 1 else parts[0]
             if content.startswith("json"):
                 content = content[4:]
             content = content.strip()
+
         try:
             return json.loads(content)
         except json.JSONDecodeError:

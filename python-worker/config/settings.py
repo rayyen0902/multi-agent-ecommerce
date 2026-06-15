@@ -7,11 +7,11 @@ class Settings(BaseSettings):
     db_host: str = "localhost"
     db_port: int = 5432
     db_user: str = "ecom"
-    db_password: str = "ecom_secret_123"
+    db_password: str = ""
     db_name: str = "ecom_order_hub"
 
     # Redis
-    redis_url: str = "redis://:redis_secret_123@localhost:6379/0"
+    redis_url: str = ""
 
     # Go 服务地址
     go_server_url: str = "http://localhost:8080"
@@ -45,6 +45,19 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
+    def __init__(self, /, **kwargs) -> None:
+        super().__init__(**kwargs)
+        required_secrets = {
+            "DB_PASSWORD": self.db_password,
+            "REDIS_URL": self.redis_url,
+        }
+        missing = [k for k, v in required_secrets.items() if not v.strip()]
+        if missing:
+            raise ValueError(
+                f"缺少必需的环境变量: {', '.join(missing)}. "
+                "请通过环境变量或 .env 文件设置。"
+            )
 
 
 settings = Settings()
