@@ -141,6 +141,11 @@ services:
       dockerfile: Dockerfile
     command: celery -A app.tasks.celery_app beat -l info
     environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     depends_on:
       redis:
@@ -176,6 +181,8 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
+      - SERVICE_ACCOUNT_USER=ecom_system
+      - SERVICE_ACCOUNT_PASSWORD=${SERVICE_ACCOUNT_PASSWORD:-ecom_sys_2024_internal}
     depends_on:
       - go-server
       - python-worker

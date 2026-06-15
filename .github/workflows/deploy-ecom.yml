@@ -117,7 +117,7 @@ jobs:
           ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=60 \
             ${DEPLOY_USER}@${DEPLOY_HOST} \
             "cd /opt/ecom && \
-             cp -f ecom.conf /etc/nginx/conf.d/ecom.conf && \
+             cp -f ecom.conf /etc/nginx/default.d/ecom.conf && \
              nginx -t && nginx -s reload && \
              echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u ${GITHUB_ACTOR} --password-stdin && \
              docker compose --env-file .env.ecom -f docker-compose.ecom.yml pull && \
