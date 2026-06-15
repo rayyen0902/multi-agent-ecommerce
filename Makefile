@@ -24,37 +24,37 @@ dev-agent: ## 启动 Agent 编排服务 (开发)
 
 # ===== Docker =====
 build: ## 构建所有 Docker 镜像
-	docker-compose build
+	docker compose build
 
 up: ## 启动所有服务
-	docker-compose up -d
+	docker compose up -d
 
 down: ## 停止所有服务
-	docker-compose down
+	docker compose down
 
 logs: ## 查看所有服务日志
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-go: ## 查看 Go 服务日志
-	docker-compose logs -f go-server
+	docker compose logs -f go-server
 
 logs-python: ## 查看 Python 服务日志
-	docker-compose logs -f python-worker
+	docker compose logs -f python-worker
 
 logs-celery: ## 查看 Celery 日志
-	docker-compose logs -f celery-worker
+	docker compose logs -f celery-worker
 
 logs-agent: ## 查看 Agent 编排服务日志
-	docker-compose logs -f agent-orchestrator
+	docker compose logs -f agent-orchestrator
 
 # ===== 数据库 =====
 db-migrate: ## 运行数据库迁移
-	docker-compose exec postgres psql -U ecom -d ecom_order_hub -f /docker-entrypoint-initdb.d/001_create_shops.sql
-	docker-compose exec postgres psql -U ecom -d ecom_order_hub -f /docker-entrypoint-initdb.d/002_create_all_tables.sql
+	docker compose exec postgres psql -U ecom -d ecom_order_hub -f /docker-entrypoint-initdb.d/001_create_shops.sql
+	docker compose exec postgres psql -U ecom -d ecom_order_hub -f /docker-entrypoint-initdb.d/002_create_all_tables.sql
 
 db-reset: ## 重置数据库 (危险!)
-	docker-compose down -v
-	docker-compose up -d postgres redis
+	docker compose down -v
+	docker compose up -d postgres redis
 
 # ===== 工具 =====
 go-deps: ## 安装 Go 依赖

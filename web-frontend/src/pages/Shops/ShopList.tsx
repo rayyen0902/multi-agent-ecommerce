@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { Table, Card, Tag, Button, Space, Modal, Form, Input, Select, message } from 'antd'
 import { PlusOutlined, SyncOutlined } from '@ant-design/icons'
 import { shopApi } from '../../services/api'
+import type { Shop } from '../../types'
 
 const platformMap: Record<string, string> = { taobao: '淘宝', jd: '京东', pdd: '拼多多' }
 
 export default function ShopList() {
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<Shop[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -16,30 +17,39 @@ export default function ShopList() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res: any = await shopApi.list({ page, page_size: 20 })
+      const res = await shopApi.list({ page, page_size: 20 })
       setData(res.data?.list || [])
       setTotal(res.data?.total || 0)
-    } catch (e) { /* handled */ }
+    } catch (e) {
+      console.error('Failed to fetch shops:', e)
+      message.error('店铺列表加载失败，请稍后重试')
+    }
     setLoading(false)
   }
 
   useEffect(() => { fetchData() }, [page])
 
-  const handleCreate = async (values: any) => {
+  const handleCreate = async (values: { name: string; platform: string; app_key: string; app_secret: string }) => {
     try {
       await shopApi.create(values)
       message.success('创建成功')
       setModalVisible(false)
       form.resetFields()
       fetchData()
-    } catch (e) { /* handled */ }
+    } catch (e) {
+      console.error('Failed to create shop:', e)
+      message.error('创建失败，请稍后重试')
+    }
   }
 
   const handleSync = async (id: number) => {
     try {
       await shopApi.triggerSync(id)
       message.success('同步任务已触发')
-    } catch (e) { /* handled */ }
+    } catch (e) {
+      console.error('Failed to trigger sync:', e)
+      message.error('触发同步失败，请稍后重试')
+    }
   }
 
   const columns = [
@@ -51,7 +61,7 @@ export default function ShopList() {
     { title: '同步间隔', dataIndex: 'sync_interval_minutes', render: (v: number) => `${v} 分钟` },
     {
       title: '操作', width: 200,
-      render: (_: any, r: any) => (
+      render: (_: unknown, r: Shop) => (
         <Space>
           <Button type="link" size="small" icon={<SyncOutlined />} onClick={() => handleSync(r.id)}>同步</Button>
         </Space>

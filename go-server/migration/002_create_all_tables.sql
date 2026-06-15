@@ -146,7 +146,8 @@ CREATE TABLE IF NOT EXISTS users (
     deleted_at TIMESTAMPTZ
 );
 
--- 默认管理员账号 (密码: admin123, bcrypt加密)
-INSERT INTO users (username, password, nickname, role, status)
-VALUES ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '系统管理员', 'admin', 1)
-ON CONFLICT (username) DO NOTHING;
+-- 注意: 默认管理员账号不再通过迁移文件创建。
+-- 首次部署时通过 API 创建 admin 账号，或使用以下 seed 脚本（仅限开发环境）：
+--   curl -X POST http://localhost:8080/api/v1/auth/register \
+--     -H 'Content-Type: application/json' \
+--     -d '{"username":"admin","password":"<STRONG_PASSWORD>","nickname":"系统管理员"}'

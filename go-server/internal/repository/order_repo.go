@@ -86,9 +86,15 @@ func (r *OrderRepository) List(filter OrderListFilter, offset, limit int) ([]mod
 		return nil, 0, err
 	}
 
-	sortField := "platform_created_at"
-	if filter.Sort != "" {
-		sortField = filter.Sort
+	allowedSortFields := map[string]bool{
+		"platform_created_at": true,
+		"status":            true,
+		"pay_amount":        true,
+		"updated_at":        true,
+	}
+	validSort := "platform_created_at"
+	if allowedSortFields[filter.Sort] {
+		validSort = filter.Sort
 	}
 	orderDir := "DESC"
 	if filter.Order == "asc" {
@@ -96,7 +102,7 @@ func (r *OrderRepository) List(filter OrderListFilter, offset, limit int) ([]mod
 	}
 
 	err := query.Preload("Items").Preload("Shop").
-		Order(sortField + " " + orderDir).
+		Order(validSort + " " + orderDir).
 		Offset(offset).Limit(limit).
 		Find(&orders).Error
 

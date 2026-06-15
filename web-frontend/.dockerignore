@@ -9,6 +9,8 @@ scripts/
 .claude/
 .github/
 .vscode/
+node_modules/
 *.log
-*.pem
-*.key
+dist/
+build/
+.env.local

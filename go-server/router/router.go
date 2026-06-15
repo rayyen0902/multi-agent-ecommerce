@@ -44,19 +44,20 @@ func Setup(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		// 认证（无需登录）
 		auth := v1.Group("/auth")
 		{
-			auth.POST("/login", authHandler.Login)
+			auth.POST("/login", middleware.LoginRateLimit(), authHandler.Login)
 		}
 
 		// 需要登录的接口
 		authorized := v1.Group("")
-		authorized.Use(middleware.AuthMiddleware(cfg.JWT.Secret))
+		authorized.Use(middleware.AuthMiddleware(cfg.JWT.Secret, db))
 		{
 			// 认证
 			authorized.POST("/auth/logout", authHandler.Logout)
 			authorized.GET("/auth/profile", authHandler.Profile)
 
-			// 店铺管理
+			// 店铺管理 — 需要 shop 级别授权
 			shops := authorized.Group("/shops")
+			shops.Use(middleware.ShopAuthMiddleware(db))
 			{
 				shops.GET("", shopHandler.List)
 				shops.POST("", shopHandler.Create)

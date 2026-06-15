@@ -13,12 +13,13 @@ export default function Login() {
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true)
     try {
-      const res: any = await authApi.login(values.username, values.password)
+      const res = await authApi.login(values.username, values.password)
       setToken(res.data.token, values.username)
       message.success('登录成功')
       navigate('/dashboard')
     } catch (e) {
-      // error handled by interceptor
+      console.error('Login failed:', e)
+      message.error('登录失败，请检查用户名和密码')
     } finally {
       setLoading(false)
     }

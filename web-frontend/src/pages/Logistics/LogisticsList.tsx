@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Table, Card, Tag } from 'antd'
+import { Table, Card, Tag, message } from 'antd'
 import { logisticsApi } from '../../services/api'
+import type { LogisticsInfo } from '../../types'
 
 const statusMap: Record<string, { color: string; text: string }> = {
   pending: { color: 'default', text: '待发货' },
@@ -10,7 +11,7 @@ const statusMap: Record<string, { color: string; text: string }> = {
 }
 
 export default function LogisticsList() {
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<LogisticsInfo[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -18,10 +19,13 @@ export default function LogisticsList() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res: any = await logisticsApi.list({ page, page_size: 20 })
+      const res = await logisticsApi.list({ page, page_size: 20 })
       setData(res.data?.list || [])
       setTotal(res.data?.total || 0)
-    } catch (e) { /* handled */ }
+    } catch (e) {
+      console.error('Failed to fetch logistics:', e)
+      message.error('物流列表加载失败，请稍后重试')
+    }
     setLoading(false)
   }
 

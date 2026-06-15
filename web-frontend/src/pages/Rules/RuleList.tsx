@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Table, Card, Tag, Switch } from 'antd'
+import { Table, Card, Tag, Switch, message } from 'antd'
 import { ruleApi } from '../../services/api'
+import type { Rule } from '../../types'
 
 const typeMap: Record<string, string> = {
   auto_ship: '自动发货', auto_review: '自动评价',
@@ -8,7 +9,7 @@ const typeMap: Record<string, string> = {
 }
 
 export default function RuleList() {
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<Rule[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -16,10 +17,13 @@ export default function RuleList() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res: any = await ruleApi.list({ page, page_size: 20 })
+      const res = await ruleApi.list({ page, page_size: 20 })
       setData(res.data?.list || [])
       setTotal(res.data?.total || 0)
-    } catch (e) { /* handled */ }
+    } catch (e) {
+      console.error('Failed to fetch rules:', e)
+      message.error('规则列表加载失败，请稍后重试')
+    }
     setLoading(false)
   }
 

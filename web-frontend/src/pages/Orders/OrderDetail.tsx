@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Descriptions, Table, Tag, Button, Timeline, Spin, Empty } from 'antd'
+import { Card, Descriptions, Table, Tag, Button, Timeline, Spin, Empty, message } from 'antd'
 import { ArrowLeftOutlined } from '@ant-design/icons'
 import { orderApi } from '../../services/api'
+import type { Order } from '../../types'
 
 const statusMap: Record<string, { color: string; text: string }> = {
   pending: { color: 'default', text: '待付款' },
@@ -16,15 +17,18 @@ const statusMap: Record<string, { color: string; text: string }> = {
 export default function OrderDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [order, setOrder] = useState<any>(null)
+  const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const res: any = await orderApi.detail(Number(id))
+        const res = await orderApi.detail(Number(id))
         setOrder(res.data)
-      } catch (e) { /* handled */ }
+      } catch (e) {
+        console.error('Failed to fetch order:', e)
+        message.error('订单详情加载失败，请稍后重试')
+      }
       setLoading(false)
     }
     fetch()

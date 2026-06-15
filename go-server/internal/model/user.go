@@ -14,6 +14,7 @@ type User struct {
 	Nickname  string         `json:"nickname" gorm:"type:varchar(50)"`
 	Email     string         `json:"email" gorm:"type:varchar(100)"`
 	Role      string         `json:"role" gorm:"type:varchar(20);default:admin"`
+	ShopID    *int64         `json:"shop_id" gorm:"type:bigint;comment:关联的店铺ID，admin可为空"`
 	Status    int8           `json:"status" gorm:"default:1;comment:1=正常 0=禁用"`
 	LastLogin *time.Time     `json:"last_login"`
 	CreatedAt time.Time      `json:"created_at"`

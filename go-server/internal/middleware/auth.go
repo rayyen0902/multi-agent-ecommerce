@@ -1,18 +1,22 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 
+	"github.com/multi-agent-ecom/go-server/internal/model"
 	"github.com/multi-agent-ecom/go-server/internal/pkg"
 )
 
 const ContextUserIDKey = "user_id"
 const ContextUsernameKey = "username"
+const ContextRoleKey = "role"
 
 type Claims struct {
 	UserID   int64  `json:"user_id"`
@@ -38,6 +42,9 @@ func GenerateToken(userID int64, username, secret string, expireHour int) (strin
 
 func ParseToken(tokenStr, secret string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
 		return []byte(secret), nil
 	})
 	if err != nil {
@@ -50,7 +57,7 @@ func ParseToken(tokenStr, secret string) (*Claims, error) {
 }
 
 // AuthMiddleware JWT 鉴权中间件
-func AuthMiddleware(secret string) gin.HandlerFunc {
+func AuthMiddleware(secret string, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -73,8 +80,17 @@ func AuthMiddleware(secret string) gin.HandlerFunc {
 			return
 		}
 
+		// 从数据库加载用户角色和 shop_id
+		var user model.User
+		if err := db.Select("role", "shop_id").First(&user, claims.UserID).Error; err != nil {
+			pkg.FailWithStatus(c, http.StatusUnauthorized, pkg.ErrCodeUnauthorized, "用户不存在")
+			c.Abort()
+			return
+		}
+
 		c.Set(ContextUserIDKey, claims.UserID)
 		c.Set(ContextUsernameKey, claims.Username)
+		c.Set(ContextRoleKey, user.Role)
 		c.Next()
 	}
 }

@@ -41,24 +41,49 @@ def match_condition(order_data: dict, condition: dict) -> bool:
         else:
             return False
 
+    # 防御：null 值导致后续比较操作 crash
+    if current is None:
+        return False
+
     if operator == "eq":
         return current == value
     elif operator == "neq":
         return current != value
     elif operator == "gt":
-        return current > value
+        try:
+            return current > value
+        except (TypeError, ValueError):
+            return False
     elif operator == "gte":
-        return current >= value
+        try:
+            return current >= value
+        except (TypeError, ValueError):
+            return False
     elif operator == "lt":
-        return current < value
+        try:
+            return current < value
+        except (TypeError, ValueError):
+            return False
     elif operator == "lte":
-        return current <= value
+        try:
+            return current <= value
+        except (TypeError, ValueError):
+            return False
     elif operator == "in":
-        return current in value
+        try:
+            return current in value
+        except TypeError:
+            return False
     elif operator == "not_in":
-        return current not in value
+        try:
+            return current not in value
+        except TypeError:
+            return False
     elif operator == "contains":
-        return value in str(current)
+        try:
+            return value in str(current)
+        except (TypeError, ValueError):
+            return False
     return False
 
 

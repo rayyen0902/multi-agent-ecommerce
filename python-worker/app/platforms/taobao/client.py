@@ -32,7 +32,7 @@ class TaobaoAdapter(PlatformAdapter):
 
     async def handle_callback(self, code: str) -> TokenResult:
         from config.settings import settings
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
             resp = await client.post(self.API_URL, data={
                 "method": "taobao.top.auth.token.create",
                 "app_key": self.app_key,
@@ -57,7 +57,7 @@ class TaobaoAdapter(PlatformAdapter):
             return TokenResult(success=False, error=str(data))
 
     async def refresh_access_token(self) -> TokenResult:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
             params = {
                 "method": "taobao.top.auth.token.refresh",
                 "app_key": self.app_key,
@@ -99,7 +99,7 @@ class TaobaoAdapter(PlatformAdapter):
         }
         params["sign"] = self._sign(params)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
             resp = await client.post(self.API_URL, data=params)
             data = resp.json()
 
@@ -165,7 +165,7 @@ class TaobaoAdapter(PlatformAdapter):
         }
         params["sign"] = self._sign(params)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
             resp = await client.post(self.API_URL, data=params)
             data = resp.json()
 

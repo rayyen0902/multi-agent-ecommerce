@@ -27,7 +27,7 @@ class PDDAdapter(PlatformAdapter):
         return AuthResult(success=True, auth_url=auth_url)
 
     async def handle_callback(self, code: str) -> TokenResult:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
             resp = await client.post(self.API_URL, json={
                 "type": "pdd.pop.auth.token.create",
                 "client_id": self.app_key,
@@ -45,7 +45,7 @@ class PDDAdapter(PlatformAdapter):
             return TokenResult(success=False, error=str(data))
 
     async def refresh_access_token(self) -> TokenResult:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0)) as client:
             resp = await client.post(self.API_URL, json={
                 "type": "pdd.pop.auth.token.refresh",
                 "client_id": self.app_key,

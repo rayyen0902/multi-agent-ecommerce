@@ -3,6 +3,7 @@ import { Table, Card, Tag, Space, Button, Input, Select, DatePicker, Modal, Form
 import { SearchOutlined, SendOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { orderApi } from '../../services/api'
+import type { Order, OrderFilter } from '../../types'
 
 const { RangePicker } = DatePicker
 
@@ -22,22 +23,25 @@ const platformMap: Record<string, string> = {
 
 export default function OrderList() {
   const navigate = useNavigate()
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<Order[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [filters, setFilters] = useState<any>({})
+  const [filters, setFilters] = useState<Partial<OrderFilter>>({})
   const [shipModal, setShipModal] = useState<{ visible: boolean; orderId: number | null }>({ visible: false, orderId: null })
   const [form] = Form.useForm()
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res: any = await orderApi.list({ page, page_size: pageSize, ...filters })
+      const res = await orderApi.list({ page, page_size: pageSize, ...filters } as OrderFilter)
       setData(res.data?.list || [])
       setTotal(res.data?.total || 0)
-    } catch (e) { /* handled */ }
+    } catch (e) {
+      console.error('Failed to fetch orders:', e)
+      message.error('订单列表加载失败，请稍后重试')
+    }
     setLoading(false)
   }
 
@@ -45,7 +49,7 @@ export default function OrderList() {
 
   const handleSearch = () => { setPage(1); fetchData() }
 
-  const handleShip = async (values: any) => {
+  const handleShip = async (values: { shipping_company: string; tracking_no: string }) => {
     if (!shipModal.orderId) return
     try {
       await orderApi.ship(shipModal.orderId, values)
@@ -53,7 +57,10 @@ export default function OrderList() {
       setShipModal({ visible: false, orderId: null })
       form.resetFields()
       fetchData()
-    } catch (e) { /* handled */ }
+    } catch (e) {
+      console.error('Failed to ship:', e)
+      message.error('发货失败，请稍后重试')
+    }
   }
 
   const columns = [
@@ -65,7 +72,7 @@ export default function OrderList() {
     },
     {
       title: '商品', width: 200, ellipsis: true,
-      render: (_: any, r: any) => r.items?.map((i: any) => i.product_name).join(', ') || '-',
+      render: (_: unknown, r: Order) => r.items?.map((i) => i.product_name).join(', ') || '-',
     },
     { title: '买家', dataIndex: 'buyer_name', width: 100 },
     {
@@ -85,7 +92,7 @@ export default function OrderList() {
     },
     {
       title: '操作', width: 180, fixed: 'right' as const,
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: Order) => (
         <Space>
           <Button type="link" size="small" onClick={() => navigate(`/orders/${record.id}`)}>详情</Button>
           {record.status === 'paid' && (
@@ -105,13 +112,13 @@ export default function OrderList() {
         <Space wrap>
           <Select placeholder="平台" allowClear style={{ width: 120 }}
             options={[{ value: 'taobao', label: '淘宝' }, { value: 'jd', label: '京东' }, { value: 'pdd', label: '拼多多' }]}
-            onChange={(v) => setFilters((f: any) => ({ ...f, platform: v }))} />
+            onChange={(v) => setFilters((f) => ({ ...f, platform: v }))} />
           <Select placeholder="状态" allowClear style={{ width: 120 }}
             options={Object.entries(statusMap).map(([k, v]) => ({ value: k, label: v.text }))}
-            onChange={(v) => setFilters((f: any) => ({ ...f, status: v }))} />
+            onChange={(v) => setFilters((f) => ({ ...f, status: v }))} />
           <Input placeholder="搜索订单号/买家" allowClear style={{ width: 200 }}
-            onChange={(e) => setFilters((f: any) => ({ ...f, keyword: e.target.value }))} />
-          <RangePicker onChange={(dates) => setFilters((f: any) => ({
+            onChange={(e) => setFilters((f) => ({ ...f, keyword: e.target.value }))} />
+          <RangePicker onChange={(dates) => setFilters((f) => ({
             ...f, date_from: dates?.[0]?.format('YYYY-MM-DD'), date_to: dates?.[1]?.format('YYYY-MM-DD')
           }))} />
           <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>搜索</Button>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Card, Col, Row, Statistic, Spin } from 'antd'
+import { Card, Col, Row, Statistic, Spin, message } from 'antd'
 import {
   ShoppingCartOutlined,
   DollarOutlined,
@@ -15,20 +15,23 @@ import {
 const COLORS = ['#1890ff', '#52c41a', '#faad14', '#f5222d']
 
 export default function Dashboard() {
-  const [overview, setOverview] = useState<any>(null)
-  const [trend, setTrend] = useState<any[]>([])
+  const [overview, setOverview] = useState<Record<string, unknown> | null>(null)
+  const [trend, setTrend] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetch = async () => {
       try {
-        const [ovRes, trRes]: any[] = await Promise.all([
+        const [ovRes, trRes] = await Promise.all([
           dashboardApi.overview(),
           dashboardApi.salesTrend(),
         ])
         setOverview(ovRes.data)
         setTrend(trRes.data || [])
-      } catch (e) { /* handled */ }
+      } catch (e) {
+        console.error('Failed to fetch dashboard data:', e)
+        message.error('数据看板加载失败，请稍后重试')
+      }
       setLoading(false)
     }
     fetch()

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Table, Card, Tag } from 'antd'
+import { message } from 'antd'
 import { productApi } from '../../services/api'
+import type { Product } from '../../types'
 
 export default function ProductList() {
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -11,10 +13,13 @@ export default function ProductList() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const res: any = await productApi.list({ page, page_size: 20 })
+      const res = await productApi.list({ page, page_size: 20 })
       setData(res.data?.list || [])
       setTotal(res.data?.total || 0)
-    } catch (e) { /* handled */ }
+    } catch (e) {
+      console.error('Failed to fetch products:', e)
+      message.error('商品列表加载失败，请稍后重试')
+    }
     setLoading(false)
   }
 
@@ -28,7 +33,7 @@ export default function ProductList() {
     { title: '成本价', dataIndex: 'cost_price', render: (v: number) => `¥${(v || 0).toFixed(2)}` },
     {
       title: '库存', dataIndex: 'stock',
-      render: (v: number, r: any) => (
+      render: (v: number, r: Product) => (
         <span style={{ color: v <= (r.stock_warning_threshold || 10) ? '#f5222d' : undefined }}>
           {v}
         </span>

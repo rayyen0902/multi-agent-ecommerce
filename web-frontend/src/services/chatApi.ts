@@ -28,12 +28,14 @@ export class ChatWebSocket {
     this.onMessage = handler
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${protocol}//${window.location.host}/ecom/api/agent/ws?token=${encodeURIComponent(token)}`
+    const url = `${protocol}//${window.location.host}/ecom/api/agent/ws`
 
     this.ws = new WebSocket(url)
 
     this.ws.onopen = () => {
       console.log('[ChatWS] 连接成功')
+      // 通过第一条消息发送 token，避免 URL 参数泄露到服务器日志
+      this.ws?.send(JSON.stringify({ type: 'auth', token }))
     }
 
     this.ws.onmessage = (event) => {
