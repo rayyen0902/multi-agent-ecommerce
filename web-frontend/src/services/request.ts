@@ -35,7 +35,7 @@ request.interceptors.response.use(
       }
       return Promise.reject(new Error(data.message))
     }
-    return data as ApiResponse<unknown>
+    return data as unknown as typeof response.data
   },
   (error) => {
     if (error.response?.status === 401) {

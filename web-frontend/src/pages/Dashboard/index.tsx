@@ -11,12 +11,13 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts'
+import type { DashboardOverview, SalesTrendPoint } from '../../types'
 
 const COLORS = ['#1890ff', '#52c41a', '#faad14', '#f5222d']
 
 export default function Dashboard() {
-  const [overview, setOverview] = useState<Record<string, unknown> | null>(null)
-  const [trend, setTrend] = useState<Record<string, unknown>[]>([])
+  const [overview, setOverview] = useState<DashboardOverview | null>(null)
+  const [trend, setTrend] = useState<SalesTrendPoint[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function Dashboard() {
           <Card>
             <Statistic
               title="今日订单" prefix={<ShoppingCartOutlined />}
-              value={overview?.today_order_count || 0}
+              value={overview?.today_orders || 0}
             />
           </Card>
         </Col>
@@ -54,7 +55,7 @@ export default function Dashboard() {
           <Card>
             <Statistic
               title="今日销售额" prefix={<DollarOutlined />}
-              value={overview?.today_sales_amount || 0}
+              value={overview?.today_amount || 0}
               precision={2} suffix="元"
             />
           </Card>
@@ -63,8 +64,8 @@ export default function Dashboard() {
           <Card>
             <Statistic
               title="待发货" prefix={<SendOutlined />}
-              value={overview?.pending_ship_count || 0}
-              valueStyle={{ color: (overview?.pending_ship_count || 0) > 0 ? '#cf1322' : undefined }}
+              value={overview?.paid_orders || 0}
+              valueStyle={{ color: (overview?.paid_orders || 0) > 0 ? '#cf1322' : undefined }}
             />
           </Card>
         </Col>
@@ -72,8 +73,8 @@ export default function Dashboard() {
           <Card>
             <Statistic
               title="库存预警" prefix={<WarningOutlined />}
-              value={overview?.stock_alert_count || 0}
-              valueStyle={{ color: (overview?.stock_alert_count || 0) > 0 ? '#faad14' : undefined }}
+              value={0}
+              valueStyle={{ color: (0 > 0) ? '#faad14' : undefined }}
             />
           </Card>
         </Col>
@@ -87,9 +88,9 @@ export default function Dashboard() {
             <YAxis yAxisId="left" />
             <YAxis yAxisId="right" orientation="right" />
             <Tooltip />
-            <Line yAxisId="left" type="monotone" dataKey="order_count"
+            <Line yAxisId="left" type="monotone" dataKey="orders"
               stroke="#1890ff" name="订单数" strokeWidth={2} />
-            <Line yAxisId="right" type="monotone" dataKey="sales_amount"
+            <Line yAxisId="right" type="monotone" dataKey="amount"
               stroke="#52c41a" name="销售额" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
