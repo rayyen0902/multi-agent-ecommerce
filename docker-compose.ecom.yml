@@ -41,8 +41,8 @@ services:
     build:
       context: ./go-server
       dockerfile: Dockerfile
-    expose:
-      - "8080"
+    ports:
+      - "127.0.0.1:6080:8080"
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -157,8 +157,8 @@ services:
     build:
       context: ./agent-orchestrator
       dockerfile: Dockerfile
-    expose:
-      - "9000"
+    ports:
+      - "127.0.0.1:6900:9000"
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
