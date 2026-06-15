@@ -87,10 +87,10 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_deploy ${DEPLOY_USER}@${DEPLOY_HOST} \
             "cd /opt/ecom && \
-             docker compose -f docker-compose.ecom.yml pull && \
-             docker compose -f docker-compose.ecom.yml up -d --no-build && \
+             docker compose --env-file .env.ecom -f docker-compose.ecom.yml pull && \
+             docker compose --env-file .env.ecom -f docker-compose.ecom.yml up -d --no-build && \
              sleep 5 && \
-             docker compose -f docker-compose.ecom.yml ps && \
+             docker compose --env-file .env.ecom -f docker-compose.ecom.yml ps && \
              echo '=== Health Check ===' && \
              curl -sf http://127.0.0.1:6300/health || echo 'Frontend health check skipped' && \
              echo '=== Deployment Complete ==='"
