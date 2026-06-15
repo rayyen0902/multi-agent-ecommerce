@@ -55,6 +55,14 @@ docker compose up --build
 cp .env.example .env
 ```
 
+## 部署
+
+### 生产部署（GitHub Actions CI/CD）
+
+代码推送到 `main` 分支后，GitHub Actions 自动构建 Docker 镜像并推送到 ghcr.io，然后部署到服务器。
+
+访问地址：`https://knownot.cc/ecom/`
+
 ## License
 
 MIT
