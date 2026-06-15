@@ -14,7 +14,7 @@ export default function Login() {
     setLoading(true)
     try {
       const res = await authApi.login(values.username, values.password)
-      setToken(res.data.token, values.username)
+      setToken(res.token, values.username)
       message.success('登录成功')
       navigate('/dashboard')
     } catch (e) {
