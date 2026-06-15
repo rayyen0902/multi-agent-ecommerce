@@ -14,8 +14,8 @@ export default function ProductList() {
     setLoading(true)
     try {
       const res = await productApi.list({ page, page_size: 20 })
-      setData(res.data?.list || [])
-      setTotal(res.data?.total || 0)
+      setData(res.list || [])
+      setTotal(res.total || 0)
     } catch (e) {
       console.error('Failed to fetch products:', e)
       message.error('商品列表加载失败，请稍后重试')

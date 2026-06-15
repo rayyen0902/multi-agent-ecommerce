@@ -36,8 +36,8 @@ export default function OrderList() {
     setLoading(true)
     try {
       const res = await orderApi.list({ page, page_size: pageSize, ...filters } as OrderFilter)
-      setData(res.data?.list || [])
-      setTotal(res.data?.total || 0)
+      setData(res.list || [])
+      setTotal(res.total || 0)
     } catch (e) {
       console.error('Failed to fetch orders:', e)
       message.error('订单列表加载失败，请稍后重试')

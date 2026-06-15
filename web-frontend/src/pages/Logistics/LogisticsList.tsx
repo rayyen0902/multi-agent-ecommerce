@@ -20,8 +20,8 @@ export default function LogisticsList() {
     setLoading(true)
     try {
       const res = await logisticsApi.list({ page, page_size: 20 })
-      setData(res.data?.list || [])
-      setTotal(res.data?.total || 0)
+      setData(res.list || [])
+      setTotal(res.total || 0)
     } catch (e) {
       console.error('Failed to fetch logistics:', e)
       message.error('物流列表加载失败，请稍后重试')

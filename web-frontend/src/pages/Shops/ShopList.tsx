@@ -18,8 +18,8 @@ export default function ShopList() {
     setLoading(true)
     try {
       const res = await shopApi.list({ page, page_size: 20 })
-      setData(res.data?.list || [])
-      setTotal(res.data?.total || 0)
+      setData(res.list || [])
+      setTotal(res.total || 0)
     } catch (e) {
       console.error('Failed to fetch shops:', e)
       message.error('店铺列表加载失败，请稍后重试')

@@ -24,7 +24,7 @@ export default function OrderDetail() {
     const fetch = async () => {
       try {
         const res = await orderApi.detail(Number(id))
-        setOrder(res.data)
+        setOrder(res)
       } catch (e) {
         console.error('Failed to fetch order:', e)
         message.error('订单详情加载失败，请稍后重试')

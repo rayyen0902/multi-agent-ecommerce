@@ -18,8 +18,8 @@ export default function RuleList() {
     setLoading(true)
     try {
       const res = await ruleApi.list({ page, page_size: 20 })
-      setData(res.data?.list || [])
-      setTotal(res.data?.total || 0)
+      setData(res.list || [])
+      setTotal(res.total || 0)
     } catch (e) {
       console.error('Failed to fetch rules:', e)
       message.error('规则列表加载失败，请稍后重试')
