@@ -1,6 +1,7 @@
-import axios from 'axios'
+import axios, { type AxiosRequestConfig } from 'axios'
 import { message } from 'antd'
 import { useAuthStore } from '../stores/useAuthStore'
+import type { ApiResponse } from '../types'
 
 const request = axios.create({
   baseURL: '/ecom/api/v1',
@@ -22,7 +23,7 @@ request.interceptors.request.use(
 // 获取 SPA 应用的基础路径（Vite base 配置）
 const appBase = import.meta.env.BASE_URL.replace(/\/$/, '') || ''
 
-// 响应拦截器
+// 响应拦截器 — 返回 ApiResponse<T> 而非 AxiosResponse
 request.interceptors.response.use(
   (response) => {
     const { data } = response
@@ -34,7 +35,7 @@ request.interceptors.response.use(
       }
       return Promise.reject(new Error(data.message))
     }
-    return data
+    return data as ApiResponse<unknown>
   },
   (error) => {
     if (error.response?.status === 401) {
@@ -46,4 +47,20 @@ request.interceptors.response.use(
   }
 )
 
-export default request
+// 封装类型正确的请求方法
+const http = {
+  get<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    return request.get(url, config).then(r => r.data as ApiResponse<T>)
+  },
+  post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    return request.post(url, data, config).then(r => r.data as ApiResponse<T>)
+  },
+  put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    return request.put(url, data, config).then(r => r.data as ApiResponse<T>)
+  },
+  delete<T>(url: string, config?: AxiosRequestConfig): Promise<ApiResponse<T>> {
+    return request.delete(url, config).then(r => r.data as ApiResponse<T>)
+  },
+}
+
+export default http
