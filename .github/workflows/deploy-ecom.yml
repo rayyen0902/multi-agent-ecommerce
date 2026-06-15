@@ -3,13 +3,6 @@ name: Build & Deploy Ecom
 on:
   push:
     branches: [main]
-    paths:
-      - 'go-server/**'
-      - 'python-worker/**'
-      - 'agent-orchestrator/**'
-      - 'web-frontend/**'
-      - 'docker-compose.ecom.yml'
-      - '.github/workflows/deploy-ecom.yml'
   workflow_dispatch:
 
 env:
