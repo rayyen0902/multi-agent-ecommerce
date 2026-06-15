@@ -38,6 +38,7 @@ services:
 
   # ========== 应用服务 ==========
   go-server:
+    image: ghcr.io/rayyen0902/ecom-go-server:latest
     build:
       context: ./go-server
       dockerfile: Dockerfile
@@ -72,6 +73,7 @@ services:
       - ecom-net
 
   python-worker:
+    image: ghcr.io/rayyen0902/ecom-python-worker:latest
     build:
       context: ./python-worker
       dockerfile: Dockerfile
@@ -103,6 +105,7 @@ services:
       - ecom-net
 
   celery-worker:
+    image: ghcr.io/rayyen0902/ecom-python-worker:latest
     build:
       context: ./python-worker
       dockerfile: Dockerfile
@@ -132,6 +135,7 @@ services:
       - ecom-net
 
   celery-beat:
+    image: ghcr.io/rayyen0902/ecom-python-worker:latest
     build:
       context: ./python-worker
       dockerfile: Dockerfile
@@ -154,6 +158,7 @@ services:
       - ecom-net
 
   agent-orchestrator:
+    image: ghcr.io/rayyen0902/ecom-agent-orchestrator:latest
     build:
       context: ./agent-orchestrator
       dockerfile: Dockerfile
@@ -189,6 +194,7 @@ services:
       - ecom-net
 
   web-frontend:
+    image: ghcr.io/rayyen0902/ecom-web-frontend:latest
     build:
       context: ./web-frontend
       dockerfile: Dockerfile
