@@ -38,7 +38,9 @@ services:
 
   # ========== 应用服务 ==========
   go-server:
-    image: ghcr.io/rayyen0902/ecom-go-server:latest
+    build:
+      context: ./go-server
+      dockerfile: Dockerfile
     expose:
       - "8080"
     environment:
@@ -62,7 +64,9 @@ services:
       - ecom-net
 
   python-worker:
-    image: ghcr.io/rayyen0902/ecom-python-worker:latest
+    build:
+      context: ./python-worker
+      dockerfile: Dockerfile
     expose:
       - "8000"
     environment:
@@ -83,7 +87,9 @@ services:
       - ecom-net
 
   celery-worker:
-    image: ghcr.io/rayyen0902/ecom-python-worker:latest
+    build:
+      context: ./python-worker
+      dockerfile: Dockerfile
     command: celery -A app.tasks.celery_app worker -l info -c 4 -Q order_sync,logistics,rule_engine
     environment:
       - DB_HOST=postgres
@@ -100,7 +106,9 @@ services:
       - ecom-net
 
   celery-beat:
-    image: ghcr.io/rayyen0902/ecom-python-worker:latest
+    build:
+      context: ./python-worker
+      dockerfile: Dockerfile
     command: celery -A app.tasks.celery_app beat -l info
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
@@ -111,7 +119,9 @@ services:
       - ecom-net
 
   agent-orchestrator:
-    image: ghcr.io/rayyen0902/ecom-agent-orchestrator:latest
+    build:
+      context: ./agent-orchestrator
+      dockerfile: Dockerfile
     expose:
       - "9000"
     environment:
@@ -136,7 +146,9 @@ services:
       - ecom-net
 
   web-frontend:
-    image: ghcr.io/rayyen0902/ecom-web-frontend:latest
+    build:
+      context: ./web-frontend
+      dockerfile: Dockerfile
     ports:
       - "127.0.0.1:6300:80"
     depends_on:
