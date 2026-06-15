@@ -145,13 +145,12 @@ services:
     networks:
       - ecom-net
 
-  nginx:
-    image: nginx:alpine
+  web-frontend:
+    build:
+      context: ./web-frontend
+      dockerfile: Dockerfile
     ports:
-      - "6300:80"
-    volumes:
-      - ./nginx/ecom.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./web-frontend/dist:/usr/share/nginx/html:ro
+      - "127.0.0.1:6300:80"
     depends_on:
       - go-server
       - agent-orchestrator

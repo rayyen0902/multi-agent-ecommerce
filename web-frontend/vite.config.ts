@@ -1,10 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => {
-  // 生产环境使用 /ecom/ 前缀，开发环境保持根路径
-  const isEcomDeploy = process.env.VITE_ECOM_DEPLOY === 'true'
-  const base = isEcomDeploy ? '/ecom/' : '/'
+export default defineConfig(() => {
+  // 部署到 knownot.cc/ecom/ 时 base 必须是 /ecom/
+  const base = '/ecom/'
 
   return {
     plugins: [react()],
