@@ -1,5 +1,5 @@
 #!/bin/bash
-# Docker 镜像加速器配置脚本
+# Docker 镜像加速器配置 + 预拉取基础镜像脚本
 # 使用阿里云镜像加速器: https://3odwuynp.mirror.aliyuncs.com
 
 echo "=== 配置 Docker 镜像加速器 ==="
@@ -10,7 +10,7 @@ if [ -f /etc/docker/daemon.json ]; then
     echo "[✓] 已备份 /etc/docker/daemon.json"
 fi
 
-# 2. 写入加速器配置（同时包含 ghcr.io 和 Docker Hub 的加速器）
+# 2. 写入加速器配置
 sudo mkdir -p /etc/docker
 sudo tee /etc/docker/daemon.json <<-'EOF' > /dev/null
 {
@@ -35,10 +35,22 @@ echo ""
 echo "=== 验证配置 ==="
 docker info 2>/dev/null | grep -A 5 "Registry Mirrors" || echo "无法验证，请手动检查"
 
+# 5. 预拉取 Docker Hub 基础镜像（阿里云加速器不代理 Docker Hub）
+echo ""
+echo "=== 预拉取基础镜像（需要几分钟）==="
+echo "正在拉取 postgres:16-alpine ..."
+docker pull postgres:16-alpine && echo "[✓] postgres:16-alpine 拉取成功" || echo "[✗] postgres:16-alpine 拉取失败"
+
+echo "正在拉取 redis:7-alpine ..."
+docker pull redis:7-alpine && echo "[✓] redis:7-alpine 拉取成功" || echo "[✗] redis:7-alpine 拉取失败"
+
 echo ""
 echo "=== 配置完成 ==="
 echo "加速器地址: https://3odwuynp.mirror.aliyuncs.com"
 echo "额外配置: DNS 优化 + live-restore"
 echo ""
-echo "请在服务器上重新运行一次:"
-echo "  curl -sL https://raw.githubusercontent.com/rayyen0902/multi-agent-ecommerce/main/scripts/setup-docker-mirror.sh | sudo bash"
+echo "已预拉取的基础镜像："
+echo "  - postgres:16-alpine"
+echo "  - redis:7-alpine"
+echo ""
+echo "下次部署时 docker compose pull 速度会明显提升。"
