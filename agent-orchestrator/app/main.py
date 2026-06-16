@@ -58,6 +58,7 @@ async def lifespan(app: FastAPI):
     model_router = ModelRouter(
         openai_api_key=settings.llm.openai_api_key,
         anthropic_api_key=settings.llm.anthropic_api_key,
+        deepseek_api_key=settings.llm.deepseek_api_key,
     )
     logger.info("模型路由已初始化")
 

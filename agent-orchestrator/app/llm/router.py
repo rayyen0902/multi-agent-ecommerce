@@ -18,10 +18,10 @@ AGENT_MODEL_TIER: dict[str, str] = {
     "ad_manager": "strong",
 }
 
-# 特殊场景强制指定模型
+# 特殊场景强制指定模型（用 deepseek_v4_pro 替代 claude_sonnet）
 FORCE_MODEL_RULES: dict[str, str] = {
-    "pmo_review": "claude_sonnet",
-    "revision_guidance": "claude_sonnet",
+    "pmo_review": "deepseek_v4_pro",
+    "revision_guidance": "deepseek_v4_pro",
 }
 
 
@@ -32,9 +32,11 @@ class ModelRouter:
         self,
         openai_api_key: str = "",
         anthropic_api_key: str = "",
+        deepseek_api_key: str = "",
     ):
         self._openai_key = openai_api_key
         self._anthropic_key = anthropic_api_key
+        self._deepseek_key = deepseek_api_key
         self._cache: dict[str, object] = {}
 
     def get_model(self, agent_name: str, scenario: str = None):
@@ -88,6 +90,8 @@ class ModelRouter:
             return self._openai_key
         elif provider == "anthropic":
             return self._anthropic_key
+        elif provider == "deepseek":
+            return self._deepseek_key
         return ""
 
     def get_model_config(self, agent_name: str, scenario: str = None) -> ModelConfig:

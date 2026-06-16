@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 class ModelConfig:
     """LLM 模型配置"""
     name: str
-    provider: str          # "openai" / "anthropic"
+    provider: str          # "openai" / "anthropic" / "deepseek"
     model_id: str
     tier: str              # "strong" / "medium" / "light"
     max_tokens: int = 4096
@@ -16,6 +16,28 @@ class ModelConfig:
 
 
 MODEL_CONFIGS: dict[str, ModelConfig] = {
+    # ---- DeepSeek（主力，性价比最高）----
+    "deepseek_v4_pro": ModelConfig(
+        name="DeepSeek V4 Pro",
+        provider="deepseek",
+        model_id="deepseek-v4-pro",
+        tier="strong",
+        max_tokens=8192,
+        temperature=0.3,
+        cost_per_1k_input=0.0005,
+        cost_per_1k_output=0.002,
+    ),
+    "deepseek_v4_flash": ModelConfig(
+        name="DeepSeek V4 Flash",
+        provider="deepseek",
+        model_id="deepseek-v4-flash",
+        tier="light",
+        max_tokens=4096,
+        temperature=0.1,
+        cost_per_1k_input=0.0001,
+        cost_per_1k_output=0.0004,
+    ),
+
     # ---- 强模型：复杂推理、规则生成、验收评估 ----
     "claude_sonnet": ModelConfig(
         name="Claude Sonnet 4",
@@ -82,6 +104,18 @@ def create_chat_model(config: ModelConfig, api_key: str = ""):
             "model": config.model_id,
             "max_tokens": config.max_tokens,
             "temperature": config.temperature,
+        }
+        if api_key:
+            kwargs["api_key"] = api_key
+        return ChatOpenAI(**kwargs)
+
+    elif config.provider == "deepseek":
+        from langchain_openai import ChatOpenAI
+        kwargs = {
+            "model": config.model_id,
+            "max_tokens": config.max_tokens,
+            "temperature": config.temperature,
+            "base_url": "https://api.deepseek.com/v1",
         }
         if api_key:
             kwargs["api_key"] = api_key

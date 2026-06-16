@@ -31,6 +31,7 @@ class RedisSettings(BaseSettings):
 class LLMSettings(BaseSettings):
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
+    deepseek_api_key: str = Field(default="", alias="DEEPSEEK_API_KEY")
     model_config = {"env_prefix": "", "extra": "ignore"}
 
 
