@@ -16,7 +16,7 @@ export default function Login() {
       const res = await authApi.login(values.username, values.password)
       setToken(res.token, values.username)
       message.success('登录成功')
-      navigate('/dashboard')
+      navigate(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/dashboard`)
     } catch (e) {
       console.error('Login failed:', e)
       message.error('登录失败，请检查用户名和密码')

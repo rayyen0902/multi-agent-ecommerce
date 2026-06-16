@@ -16,14 +16,16 @@ import ChatFloatButton from '../ChatFloatButton'
 
 const { Header, Sider, Content } = Layout
 
+const appBase = import.meta.env.BASE_URL.replace(/\/$/, '') || ''
+
 const menuItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: '数据看板' },
-  { key: '/orders', icon: <ShoppingCartOutlined />, label: '订单管理' },
-  { key: '/shops', icon: <ShopOutlined />, label: '店铺管理' },
-  { key: '/products', icon: <AppstoreOutlined />, label: '商品管理' },
-  { key: '/logistics', icon: <CarOutlined />, label: '物流跟踪' },
-  { key: '/rules', icon: <ThunderboltOutlined />, label: '自动化规则' },
-  { key: '/settings', icon: <SettingOutlined />, label: '系统设置' },
+  { key: `${appBase}/dashboard`, icon: <DashboardOutlined />, label: '数据看板' },
+  { key: `${appBase}/orders`, icon: <ShoppingCartOutlined />, label: '订单管理' },
+  { key: `${appBase}/shops`, icon: <ShopOutlined />, label: '店铺管理' },
+  { key: `${appBase}/products`, icon: <AppstoreOutlined />, label: '商品管理' },
+  { key: `${appBase}/logistics`, icon: <CarOutlined />, label: '物流跟踪' },
+  { key: `${appBase}/rules`, icon: <ThunderboltOutlined />, label: '自动化规则' },
+  { key: `${appBase}/settings`, icon: <SettingOutlined />, label: '系统设置' },
 ]
 
 export default function MainLayout() {
@@ -31,7 +33,7 @@ export default function MainLayout() {
   const location = useLocation()
   const { username, logout } = useAuthStore()
 
-  const selectedKey = '/' + location.pathname.split('/')[1]
+  const selectedKey = appBase + '/' + location.pathname.replace(new RegExp(`^${appBase}/?`), '').split('/')[0]
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -62,7 +64,7 @@ export default function MainLayout() {
               { type: 'divider' },
               {
                 key: 'logout', icon: <LogoutOutlined />, label: '退出登录',
-                onClick: () => { logout(); navigate('/login') }
+                onClick: () => { logout(); navigate(`${appBase}/login`) }
               },
             ]
           }}>
